@@ -1,0 +1,1 @@
+java $JVM_OPTIONS $JAVA_REMOTE_DEBUG -jar sellers-api.jar

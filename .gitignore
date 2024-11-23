@@ -1,0 +1,11 @@
+/.gradle/
+/.idea/
+/tool-versions
+/build/
+/out/
+/*.iml
+/.mvn/
+/target/
+/.vscode/
+/*.log
+/.DS_Store

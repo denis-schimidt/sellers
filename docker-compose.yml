@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  sellers-api:
+    image: ${APP_VERSION:-sellers-api:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - "JAVA_REMOTE_DEBUG=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    container_name: sellers-api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_DATABASE: sellers-db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      DB_HOST: postgres-db
+    depends_on:
+      - postgres-db
+
+  postgres-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: sellers-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    container_name: postgres-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - /media/schimidt/Arquivos/projetos/kotlin/databases/seller-db:/var/lib/postgresql/data
+
+volumes:
+  db_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: src/main/resources/db/data
