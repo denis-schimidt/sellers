@@ -29,14 +29,14 @@ class Seller(
     @Column(nullable = false, length = 100)
     val name: String,
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 100, unique = true)
     @field:Email
     @field:NotBlank
     val email: String,
 
     @field:CPF
     @field:NotBlank
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 20, unique = true)
     val cpf: String,
 
     @field:Past

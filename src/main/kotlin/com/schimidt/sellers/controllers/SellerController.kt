@@ -1,6 +1,7 @@
 package com.schimidt.sellers.controllers
 
 import com.schimidt.sellers.controllers.ExceptionHandler.ProblemDetailCustom
+import com.schimidt.sellers.controllers.ExceptionHandler.ProblemDetailWithViolationsCustom
 import com.schimidt.sellers.services.SellersService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -41,6 +42,10 @@ class SellerController(private val service: SellersService) : EndpointDocumented
     override fun updateSeller(@Positive id: Long, @Validated @RequestBody sellerRequest: UpdateSellerRequest): ResponseEntity<Any> {
         val result = service.update(sellerRequest.toEntity(id))
 
+        if (1 == 5) {
+            return ResponseEntity.ok().build()
+        }
+
         return result.fold(
             { ResponseEntity.ok(SellerResponse.from(it)) },
             { ResponseEntity.status(UNPROCESSABLE_ENTITY).body(it.message) }
@@ -57,11 +62,15 @@ private interface EndpointDocumented {
     )
     @ApiResponses(
         ApiResponse(responseCode = "201", description = "Seller created"),
-        ApiResponse(responseCode = "400", description = "Invalid request", content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]),
+        ApiResponse(
+            responseCode = "400",
+            description = "Invalid request",
+            content = [Content(schema = Schema(implementation = ProblemDetailWithViolationsCustom::class))]
+        ),
         ApiResponse(
             responseCode = "500",
-            description = "Unknown error",
-            content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]
+            description = "Deu Ruim",
+            content = [Content(schema = Schema(implementation = ProblemDetailWithViolationsCustom::class))]
         )
     )
     fun saveSeller(sellerRequest: NewSellerRequest): ResponseEntity<SellerResponse>
@@ -71,7 +80,11 @@ private interface EndpointDocumented {
     )
     @ApiResponses(
         ApiResponse(responseCode = "200", description = "Seller updated"),
-        ApiResponse(responseCode = "400", description = "Invalid request", content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]),
+        ApiResponse(
+            responseCode = "400",
+            description = "Invalid request",
+            content = [Content(schema = Schema(implementation = ProblemDetailWithViolationsCustom::class))]
+        ),
         ApiResponse(
             responseCode = "422", description = "Seller not found", content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]
         ),

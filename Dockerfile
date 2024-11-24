@@ -33,17 +33,13 @@ RUN jlink \
 #Etapa 3: Imagem final
 FROM alpine:latest
 
-ARG APP_VERSION=latest
-ARG JAVA_REMOTE_DEBUG
-
 LABEL maintainer="Denis Schimidt <denao@gmail.com>"
-LABEL app-version=$APP_VERSION
 LABEL description="Microserviço para cadastro de vendedores"
 
 ENV JAVA_HOME=/opt/jre-slim
 ENV PATH="$JAVA_HOME/bin:$PATH"
 ENV JVM_OPTIONS="--enable-preview -XX:NativeMemoryTracking=summary -XX:+UseContainerSupport -XX:MaxRAMPercentage=90.0"
-ENV JAVA_REMOTE_DEBUG=$JAVA_REMOTE_DEBUG
+ENV JAVA_REMOTE_DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
 
 WORKDIR /app
 

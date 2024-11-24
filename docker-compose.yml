@@ -6,11 +6,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        - "JAVA_REMOTE_DEBUG=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
     container_name: sellers-api
     ports:
       - "8080:8080"
+      - "5005:5005"
     environment:
       SPRING_DATASOURCE_DATABASE: sellers-db
       SPRING_DATASOURCE_USERNAME: postgres
@@ -29,7 +28,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - /media/schimidt/Arquivos/projetos/kotlin/databases/seller-db:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
 
 volumes:
   db_data:
@@ -37,4 +36,4 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: src/main/resources/db/data
+      device: ${VOLUME_SELLERS_DB:-/media/schimidt/Arquivos/projetos/kotlin/databases/seller-db}
