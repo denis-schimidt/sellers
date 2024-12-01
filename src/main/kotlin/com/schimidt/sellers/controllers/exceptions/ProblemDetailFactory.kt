@@ -1,6 +1,6 @@
 package com.schimidt.sellers.controllers.exceptions
 
-import com.schimidt.sellers.domain.exceptions.CpfCnpjAlreadyExists
+import com.schimidt.sellers.domain.exceptions.CpfAlreadyExists
 import org.hibernate.exception.ConstraintViolationException
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
@@ -26,9 +26,9 @@ class MethodArgumentNotValidExceptionFactory() : ProblemDetailFactory<MethodArgu
     }
 }
 
-class CpfCnpjAlreadyExistsFactory() : ProblemDetailFactory<CpfCnpjAlreadyExists> {
+class CpfAlreadyExistsFactory() : ProblemDetailFactory<CpfAlreadyExists> {
 
-    override fun create(exception: CpfCnpjAlreadyExists): ProblemDetail {
+    override fun create(exception: CpfAlreadyExists): ProblemDetail {
         return ProblemDetail.forStatus(HttpStatus.CONFLICT).apply {
             title = "Conflict"
             type = URI.create("https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/409")
@@ -85,7 +85,7 @@ class ProblemDetailSelectorFactory {
     fun createProblemDetailBasedOn(exception: Throwable): ProblemDetail {
         return when (exception) {
             is MethodArgumentNotValidException -> MethodArgumentNotValidExceptionFactory().create(exception)
-            is CpfCnpjAlreadyExists -> CpfCnpjAlreadyExistsFactory().create(exception)
+            is CpfAlreadyExists -> CpfAlreadyExistsFactory().create(exception)
             is ConstraintViolationException -> ConstraintViolationExceptionFactory().create(exception)
             is DataIntegrityViolationException -> DataIntegrityViolationExceptionFactory().create(exception)
             else -> ThrowableProblemDetailFactory().create(exception)

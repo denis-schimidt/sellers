@@ -1,7 +1,7 @@
 package com.schimidt.sellers.services
 
 import com.schimidt.sellers.domain.entities.Seller
-import com.schimidt.sellers.domain.exceptions.CpfCnpjAlreadyExists
+import com.schimidt.sellers.domain.exceptions.CpfAlreadyExists
 import com.schimidt.sellers.domain.repositories.SellerRepository
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
@@ -12,7 +12,7 @@ class SellersService(
 ) {
     fun saveIfNotExists(seller: Seller): Result<Seller> {
         repository.findByCpf(seller.cpf)?.let {
-            return Result.failure(CpfCnpjAlreadyExists(seller.cpf))
+            return Result.failure(CpfAlreadyExists(seller.cpf))
         }
 
         return try {
