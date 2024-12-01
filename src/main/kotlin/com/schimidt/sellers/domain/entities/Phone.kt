@@ -1,4 +1,4 @@
-package com.schimidt.sellers.entities
+package com.schimidt.sellers.domain.entities
 
 import jakarta.persistence.Column
 import jakarta.persistence.Embeddable

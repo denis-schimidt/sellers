@@ -1,7 +1,8 @@
 package com.schimidt.sellers.controllers
 
-import com.schimidt.sellers.controllers.ExceptionHandler.ProblemDetailCustom
-import com.schimidt.sellers.controllers.ExceptionHandler.ProblemDetailWithViolationsCustom
+import com.schimidt.sellers.controllers.exceptions.ExceptionHandler.ProblemDetailCustom
+import com.schimidt.sellers.controllers.exceptions.ExceptionHandler.ProblemDetailWithViolationsCustom
+import com.schimidt.sellers.controllers.exceptions.ProblemDetailSelectorFactory
 import com.schimidt.sellers.services.SellersService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 import org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY
 import org.springframework.http.ResponseEntity
@@ -23,23 +25,29 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 
 @RestController
 @RequestMapping("/api/v1/sellers", consumes = ["application/json"], produces = ["application/json"])
-class SellerController(private val service: SellersService) : EndpointDocumented {
+class SellerController(
+    private val service: SellersService,
+    private val problemDetailSelectorFactory: ProblemDetailSelectorFactory
+) : EndpointDocumented {
 
     @PostMapping
-    override fun saveSeller(@Validated @RequestBody sellerRequest: NewSellerRequest): ResponseEntity<SellerResponse> {
-        return service.save(sellerRequest.toEntity())
-            .let {
-                ResponseEntity.created(
-                    ServletUriComponentsBuilder.fromCurrentRequest()
-                        .path("/{id}")
-                        .buildAndExpand(it.id)
-                        .toUri()
-                ).body(SellerResponse.from(it))
-            }
+    override fun saveSeller(@Validated @RequestBody sellerRequest: NewSellerRequest): Any {
+        return service.saveIfNotExists(sellerRequest.toEntity())
+            .fold(
+                onSuccess = {
+                    ResponseEntity.created(
+                        ServletUriComponentsBuilder.fromCurrentRequest()
+                            .path("/{id}")
+                            .buildAndExpand(it.id)
+                            .toUri()
+                    ).body(SellerResponse.from(it))
+                },
+                onFailure = { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
+            )
     }
 
     @PutMapping("/{id}")
-    override fun updateSeller(@Positive id: Long, @Validated @RequestBody sellerRequest: UpdateSellerRequest): ResponseEntity<Any> {
+    override fun updateSeller(@NotNull @Positive id: Long, @Validated @RequestBody sellerRequest: UpdateSellerRequest): ResponseEntity<Any> {
         val result = service.update(sellerRequest.toEntity(id))
 
         if (1 == 5) {
@@ -68,12 +76,17 @@ private interface EndpointDocumented {
             content = [Content(schema = Schema(implementation = ProblemDetailWithViolationsCustom::class))]
         ),
         ApiResponse(
+            responseCode = "409",
+            description = "Conflict with another seller",
+            content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]
+        ),
+        ApiResponse(
             responseCode = "500",
-            description = "Deu Ruim",
-            content = [Content(schema = Schema(implementation = ProblemDetailWithViolationsCustom::class))]
+            description = "Internal Server Error",
+            content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]
         )
     )
-    fun saveSeller(sellerRequest: NewSellerRequest): ResponseEntity<SellerResponse>
+    fun saveSeller(sellerRequest: NewSellerRequest): Any
 
     @Operation(
         summary = "Update a seller", tags = ["Sellers"]

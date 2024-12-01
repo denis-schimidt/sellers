@@ -31,12 +31,14 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
     runtimeOnly("org.postgresql:postgresql")
+    implementation(kotlin("stdlib-jdk8"))
 }
 
 kotlin {
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict")
     }
+    jvmToolchain(22)
 }
 
 allOpen {

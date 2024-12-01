@@ -1,11 +1,11 @@
 package com.schimidt.sellers.controllers
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.schimidt.sellers.entities.Phone
-import com.schimidt.sellers.entities.PhoneId
-import com.schimidt.sellers.entities.PhoneType
-import com.schimidt.sellers.entities.Seller
-import com.schimidt.sellers.entities.SellerStatus
+import com.schimidt.sellers.domain.entities.Phone
+import com.schimidt.sellers.domain.entities.PhoneId
+import com.schimidt.sellers.domain.entities.PhoneType
+import com.schimidt.sellers.domain.entities.Seller
+import com.schimidt.sellers.domain.entities.SellerStatus
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.Max
@@ -15,6 +15,7 @@ import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Past
 import jakarta.validation.constraints.Size
+import org.hibernate.validator.constraints.br.CNPJ
 import org.hibernate.validator.constraints.br.CPF
 import java.time.LocalDate
 
@@ -52,9 +53,13 @@ data class SellerRequest(
     val email: String,
 
     @field:NotBlank
-    @field:Size(max = 20)
+    @field:Size(max = 15)
     @field:CPF
     val cpf: String,
+
+    @field:CNPJ
+    @field:Size(max = 20)
+    val cnpj: String? = null,
 
     @field:NotNull
     @field:Past
@@ -71,6 +76,7 @@ data class SellerRequest(
             name = name,
             email = email,
             cpf = cpf,
+            cnpj = cnpj,
             birthday = birthday,
             phones = mutableListOf(),
             status = status
@@ -90,7 +96,7 @@ data class PhoneRequest(
     val areaCode: Int,
 
     @field:NotNull
-    @field:Min(100_0000)
+    @field:Min(1999_9999)
     @field:Max(9999_99999)
     val number: Int,
 

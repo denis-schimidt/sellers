@@ -1,8 +1,8 @@
 package com.schimidt.sellers.controllers
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.schimidt.sellers.entities.Phone
-import com.schimidt.sellers.entities.Seller
+import com.schimidt.sellers.domain.entities.Phone
+import com.schimidt.sellers.domain.entities.Seller
 import java.time.LocalDate
 
 data class SellerResponse(
@@ -10,6 +10,7 @@ data class SellerResponse(
     val name: String,
     val email: String,
     val cpf: String,
+    val cnpj: String?,
     val birthday: LocalDate,
     val phones: List<PhoneResponse>
 ) {
@@ -21,6 +22,7 @@ data class SellerResponse(
                 name = seller.name,
                 email = seller.email,
                 cpf = seller.cpf,
+                cnpj = seller.cnpj,
                 birthday = seller.birthday,
                 phones = seller.phones.map { PhoneResponse.from(it) }
             )

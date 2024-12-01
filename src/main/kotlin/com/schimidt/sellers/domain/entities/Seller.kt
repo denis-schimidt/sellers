@@ -1,4 +1,4 @@
-package com.schimidt.sellers.entities
+package com.schimidt.sellers.domain.entities
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -15,6 +15,7 @@ import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Past
 import jakarta.validation.constraints.Size
+import org.hibernate.validator.constraints.br.CNPJ
 import org.hibernate.validator.constraints.br.CPF
 import java.time.LocalDate
 
@@ -36,7 +37,7 @@ class Seller(
 
     @field:CPF
     @field:NotBlank
-    @Column(nullable = false, length = 20, unique = true)
+    @Column(nullable = false, length = 15, unique = true)
     val cpf: String,
 
     @field:Past
@@ -46,6 +47,10 @@ class Seller(
     @Enumerated(STRING)
     @Column(nullable = false, length = 20)
     var status: SellerStatus = SellerStatus.IN_ANALYSIS,
+
+    @field:CNPJ
+    @Column(nullable = true, length = 20, unique = true)
+    val cnpj: String? = null,
 
     @OneToMany(mappedBy = "seller", cascade = [CascadeType.ALL], orphanRemoval = true)
     @field:Size(min = 1, max = 2)

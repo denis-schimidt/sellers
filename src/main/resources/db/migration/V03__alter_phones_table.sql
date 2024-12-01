@@ -1,4 +1,4 @@
-ALTER TABLE IF EXISTS phones
-ADD CONSTRAINT fk_phones_sellers
-FOREIGN KEY (seller_id)
-REFERENCES sellers(id);
+alter table if exists phones
+add constraint fk_phones_sellers
+foreign key (seller_id)
+references sellers
