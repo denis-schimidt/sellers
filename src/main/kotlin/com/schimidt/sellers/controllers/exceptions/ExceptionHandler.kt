@@ -6,21 +6,40 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.method.annotation.HandlerMethodValidationException
+import org.springframework.web.servlet.resource.NoResourceFoundException
 import java.net.URI
 
 @ControllerAdvice
-class ExceptionHandler(private val problemDetailSelectorFactory: ProblemDetailSelectorFactory) {
+class ExceptionHandler(
+    private val methodArgumentNotValidFactory: MethodArgumentNotValidProblemDetailFactory,
+    private val noResourceFoundFactory: NoResourceFoundProblemDetailFactory,
+    private val throwableFactory: ThrowableProblemDetailFactory,
+    private val handlerMethodValidationExceptionFactory: HandlerMethodValidationProblemDetailFactory,
+) {
+
+    @ExceptionHandler(HandlerMethodValidationException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handle(exception: HandlerMethodValidationException): ProblemDetail {
+        return handlerMethodValidationExceptionFactory.create(exception)
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handle(exception: MethodArgumentNotValidException): ProblemDetail {
-        return problemDetailSelectorFactory.createProblemDetailBasedOn(exception)
+        return methodArgumentNotValidFactory.create(exception)
     }
 
-    @ExceptionHandler(Exception::class)
+    @ExceptionHandler(NoResourceFoundException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handle(exception: NoResourceFoundException): ProblemDetail {
+        return noResourceFoundFactory.create(exception)
+    }
+
+    @ExceptionHandler(Throwable::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    fun handle(exception: Exception): ProblemDetail {
-        return problemDetailSelectorFactory.createProblemDetailBasedOn(exception)
+    fun handle(exception: Throwable): ProblemDetail {
+        return throwableFactory.create(exception)
     }
 
     internal open class ProblemDetailCustom(

@@ -6,23 +6,48 @@ import com.schimidt.sellers.domain.entities.Seller
 import java.time.LocalDate
 
 data class SellerResponse(
+    val personalResponse: SellerPersonalResponse,
+    val professionalResponse: SellerProfissionalResponse
+) {
+    companion object {
+        fun from(seller: Seller): SellerResponse {
+            return SellerResponse(
+                personalResponse = SellerPersonalResponse.from(seller),
+                professionalResponse = SellerProfissionalResponse.from(seller)
+            )
+        }
+    }
+}
+
+data class SellerProfissionalResponse(
+    val cnpj: String?,
+    val status: String
+) {
+    companion object {
+        fun from(seller: Seller): SellerProfissionalResponse {
+            return SellerProfissionalResponse(
+                cnpj = seller.cnpj,
+                status = seller.status().name
+            )
+        }
+    }
+}
+
+data class SellerPersonalResponse(
     val id: Long,
     val name: String,
     val email: String,
     val cpf: String,
-    val cnpj: String?,
     val birthday: LocalDate,
     val phones: List<PhoneResponse>
 ) {
-
     companion object {
-        fun from(seller: Seller): SellerResponse {
-            return SellerResponse(
+        fun from(seller: Seller): SellerPersonalResponse {
+            return SellerPersonalResponse(
                 id = seller.id!!,
                 name = seller.name,
                 email = seller.email,
                 cpf = seller.cpf,
-                cnpj = seller.cnpj,
                 birthday = seller.birthday,
                 phones = seller.phones.map { PhoneResponse.from(it) }
             )
@@ -31,7 +56,7 @@ data class SellerResponse(
 }
 
 data class PhoneResponse(
-    @JsonProperty("area_code")
+    @JsonProperty
     val areaCode: Byte,
     val number: Int,
     @field:JsonProperty("phone_type")
@@ -47,3 +72,4 @@ data class PhoneResponse(
         }
     }
 }
+

@@ -2,6 +2,7 @@ package com.schimidt.sellers.services
 
 import com.schimidt.sellers.domain.entities.Seller
 import com.schimidt.sellers.domain.exceptions.CpfAlreadyExists
+import com.schimidt.sellers.domain.exceptions.ResourceNotFoundException
 import com.schimidt.sellers.domain.repositories.SellerRepository
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
@@ -27,13 +28,41 @@ class SellersService(
         return repository.save<Seller>(seller)
     }
 
-    @Transactional
-    fun update(seller: Seller): Result<Seller> {
+    fun updateIfExists(sellerRequested: Seller): Result<Seller> {
+        return try {
+            repository.findById(sellerRequested.id!!)
+                .map { sellerRetrieved ->
+                    sellerRetrieved.createNewSellerUpdatedUsing(sellerRequested)
+                        .let {
+                            Result.success(saveSeller(it))
+                        }
+                }
+                .orElseThrow { ResourceNotFoundException(sellerRequested.id!!) }
 
-        if (repository.findById(seller.id!!).isEmpty.not()) {
-            return Result.failure(IllegalArgumentException("Seller ID:${seller.id} not found"))
+        } catch (e: Exception) {
+            Result.failure(e.cause ?: e)
         }
+    }
 
-        return Result.success(repository.save<Seller>(seller))
+    fun findById(id: Long): Result<Seller> {
+
+        return try {
+            repository.findByIdWithPhones(id)?.let { Result.success(it) }
+                ?: Result.failure(ResourceNotFoundException(id))
+
+        } catch (e: Exception) {
+            Result.failure(e.cause ?: e)
+        }
+    }
+
+    fun deleteBy(lng: Long): Result<Unit> {
+
+        return try {
+            repository.deleteById(lng)
+            Result.success(Unit)
+
+        } catch (e: Exception) {
+            Result.failure(e.cause ?: e)
+        }
     }
 }

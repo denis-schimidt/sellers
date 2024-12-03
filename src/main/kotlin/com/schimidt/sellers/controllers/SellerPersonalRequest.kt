@@ -20,29 +20,67 @@ import org.hibernate.validator.constraints.br.CPF
 import java.time.LocalDate
 
 data class NewSellerRequest(
-    @field:JsonProperty("personal_data")
+    @field:JsonProperty
     @field:Valid
-    var personalData: SellerRequest
+    val personalData: SellerPersonalRequest,
+
+    @field:JsonProperty
+    @field:Valid
+    val professionalData: NewProfessionalRequest,
 ) {
     fun toEntity(): Seller {
-        return personalData.toEntity()
+        return toEntity(personalData = personalData, cnpj = professionalData.cnpj)
     }
 }
 
 data class UpdateSellerRequest(
-    @field:JsonProperty("personal_data")
+    @field:JsonProperty
     @field:Valid
-    val common: SellerRequest,
+    val personalData: SellerPersonalRequest,
 
-    @field:NotNull
-    val status: SellerStatus
-) {
+    @field:JsonProperty
+    @field:Valid
+    val professionalData: UpdateProfessionalRequest,
+
+    ) {
     fun toEntity(id: Long): Seller {
-        return common.toEntity(id = id, status = status)
+        return toEntity(id = id, personalData = personalData, cnpj = professionalData.cnpj, status = professionalData.status)
     }
 }
 
-data class SellerRequest(
+private fun toEntity(id: Long? = null, personalData: SellerPersonalRequest, cnpj: String? = null, status: SellerStatus = SellerStatus.IN_ANALYSIS): Seller {
+    val seller = Seller(
+        id = id,
+        name = personalData.name,
+        email = personalData.email,
+        cpf = personalData.cpf,
+        cnpj = cnpj,
+        birthday = personalData.birthday,
+        phones = mutableListOf(),
+        status = status
+    )
+    personalData.phones.forEach { phoneRequest ->
+        seller.addPhone(phoneRequest.toEntity(seller))
+    }
+    return seller
+}
+
+data class UpdateProfessionalRequest(
+    @field:CNPJ
+    @field:Size(max = 20)
+    val cnpj: String? = null,
+
+    @field:NotNull
+    val status: SellerStatus
+)
+
+data class NewProfessionalRequest(
+    @field:CNPJ
+    @field:Size(max = 20)
+    val cnpj: String? = null,
+)
+
+data class SellerPersonalRequest(
     @field:NotBlank
     @field:Size(max = 100)
     val name: String,
@@ -57,10 +95,6 @@ data class SellerRequest(
     @field:CPF
     val cpf: String,
 
-    @field:CNPJ
-    @field:Size(max = 20)
-    val cnpj: String? = null,
-
     @field:NotNull
     @field:Past
     val birthday: LocalDate,
@@ -68,25 +102,8 @@ data class SellerRequest(
     @field:NotEmpty
     @field:Size(min = 1, max = 2)
     @field:Valid
-    val phones: List<PhoneRequest>,
-) {
-    fun toEntity(id: Long? = null, status: SellerStatus = SellerStatus.IN_ANALYSIS): Seller {
-        val seller = Seller(
-            id = id,
-            name = name,
-            email = email,
-            cpf = cpf,
-            cnpj = cnpj,
-            birthday = birthday,
-            phones = mutableListOf(),
-            status = status
-        )
-        phones.forEach { phoneRequest ->
-            seller.addPhone(phoneRequest.toEntity(seller))
-        }
-        return seller
-    }
-}
+    val phones: List<PhoneRequest>
+)
 
 data class PhoneRequest(
     @field:NotNull

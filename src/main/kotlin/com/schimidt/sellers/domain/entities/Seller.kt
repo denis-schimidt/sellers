@@ -24,7 +24,7 @@ import java.time.LocalDate
 class Seller(
     @Id
     @GeneratedValue(strategy = IDENTITY)
-    var id: Long? = null,
+    val id: Long? = null,
 
     @field:NotBlank
     @Column(nullable = false, length = 100)
@@ -46,7 +46,7 @@ class Seller(
 
     @Enumerated(STRING)
     @Column(nullable = false, length = 20)
-    var status: SellerStatus = SellerStatus.IN_ANALYSIS,
+    private var status: SellerStatus = SellerStatus.IN_ANALYSIS,
 
     @field:CNPJ
     @Column(nullable = true, length = 20, unique = true)
@@ -57,6 +57,24 @@ class Seller(
     @field:Valid
     val phones: MutableList<Phone> = mutableListOf()
 ) {
+    fun status(): SellerStatus = status
+
+    fun createNewSellerUpdatedUsing(seller: Seller): Seller {
+        return Seller(
+            id = this.id,
+            name = seller.name,
+            email = seller.email,
+            cpf = this.cpf,
+            birthday = seller.birthday,
+            cnpj = seller.cnpj,
+            phones = seller.phones
+        ).apply {
+            if (this.status != seller.status) {
+                changeStatus(seller.status)
+            }
+        }
+    }
+
     fun approve() {
         changeStatus(SellerStatus.ACTIVE)
     }
@@ -74,7 +92,7 @@ class Seller(
         changeStatus(SellerStatus.INACTIVE)
     }
 
-    private fun changeStatus(newStatus: SellerStatus) {
+    fun changeStatus(newStatus: SellerStatus) {
         if (!status.canBeChanged(newStatus)) {
             throw IllegalStateException("Status $status cannot be changed to $newStatus")
         }
