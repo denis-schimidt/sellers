@@ -6,6 +6,7 @@ import com.schimidt.sellers.domain.entities.PhoneId
 import com.schimidt.sellers.domain.entities.PhoneType
 import com.schimidt.sellers.domain.entities.Seller
 import com.schimidt.sellers.domain.entities.SellerStatus
+import com.schimidt.sellers.domain.entities.SellerUpdatable
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.Max
@@ -40,13 +41,32 @@ data class UpdateSellerRequest(
 
     @field:JsonProperty
     @field:Valid
-    val professionalData: UpdateProfessionalRequest,
+    val professionalData: UpdateProfessionalRequest
+) : SellerUpdatable {
 
-    ) {
-    fun toEntity(id: Long): Seller {
-        return toEntity(id = id, personalData = personalData, cnpj = professionalData.cnpj, status = professionalData.status)
+    override fun name(): String? = personalData.name
+
+    override fun email(): String? = personalData.email
+
+    override fun cpf(): String? = personalData.cpf
+
+    override fun birthday(): LocalDate? = personalData.birthday
+
+    override fun status(): SellerStatus? = professionalData.status
+
+    override fun cnpj(): String? = professionalData.cnpj
+
+    override fun phones(): Set<Phone>? {
+        return personalData.phones
+            .map { Phone(type = it.type, id = PhoneId(areaCode = it.areaCode.toByte(), number = it.number)) }
+            .toSet()
+    }
+
+    override fun hasDifferentStatus(otherStatus: SellerStatus): Boolean {
+        return status() != null && status() != otherStatus
     }
 }
+
 
 private fun toEntity(id: Long? = null, personalData: SellerPersonalRequest, cnpj: String? = null, status: SellerStatus = SellerStatus.IN_ANALYSIS): Seller {
     val seller = Seller(
@@ -56,7 +76,7 @@ private fun toEntity(id: Long? = null, personalData: SellerPersonalRequest, cnpj
         cpf = personalData.cpf,
         cnpj = cnpj,
         birthday = personalData.birthday,
-        phones = mutableListOf(),
+        phones = mutableSetOf(),
         status = status
     )
     personalData.phones.forEach { phoneRequest ->
@@ -71,7 +91,7 @@ data class UpdateProfessionalRequest(
     val cnpj: String? = null,
 
     @field:NotNull
-    val status: SellerStatus
+    val status: SellerStatus = SellerStatus.IN_ANALYSIS
 )
 
 data class NewProfessionalRequest(

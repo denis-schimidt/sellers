@@ -1,5 +1,5 @@
 # Etapa 1: Gerar o Jar
-FROM gradle:8.10.2-jdk-21-and-22-alpine AS build
+FROM gradle:8.11.1-jdk21-corretto AS build
 WORKDIR /app
 COPY build.gradle.kts settings.gradle.kts ./
 COPY src ./src

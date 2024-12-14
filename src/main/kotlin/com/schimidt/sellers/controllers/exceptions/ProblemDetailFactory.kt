@@ -3,6 +3,9 @@ package com.schimidt.sellers.controllers.exceptions
 import com.schimidt.sellers.domain.exceptions.CpfAlreadyExists
 import com.schimidt.sellers.domain.exceptions.ResourceNotFoundException
 import org.hibernate.exception.ConstraintViolationException
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
@@ -12,8 +15,9 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import java.net.URI
 
-interface ProblemDetailFactory<T> {
+interface ProblemDetailFactory<T : Throwable> {
     fun create(exception: T): ProblemDetail
+    fun getThrowableType(): Class<T>
 }
 
 @Component
@@ -28,8 +32,13 @@ class MethodArgumentNotValidProblemDetailFactory() : ProblemDetailFactory<Method
             setProperty("violations", exception.bindingResult.fieldErrors.map { fieldError -> "${fieldError.field} -> ${fieldError.defaultMessage}" })
         }
     }
+
+    override fun getThrowableType(): Class<MethodArgumentNotValidException> {
+        return MethodArgumentNotValidException::class.java
+    }
 }
 
+@Component
 class CpfAlreadyExistsProblemDetailFactory() : ProblemDetailFactory<CpfAlreadyExists> {
 
     override fun create(exception: CpfAlreadyExists): ProblemDetail {
@@ -39,8 +48,13 @@ class CpfAlreadyExistsProblemDetailFactory() : ProblemDetailFactory<CpfAlreadyEx
             detail = exception.message
         }
     }
+
+    override fun getThrowableType(): Class<CpfAlreadyExists> {
+        return CpfAlreadyExists::class.java
+    }
 }
 
+@Component
 class DataIntegrityViolationProblemDetailFactory() : ProblemDetailFactory<DataIntegrityViolationException> {
     private val logger = org.slf4j.LoggerFactory.getLogger(DataIntegrityViolationProblemDetailFactory::class.java)
 
@@ -53,13 +67,16 @@ class DataIntegrityViolationProblemDetailFactory() : ProblemDetailFactory<DataIn
             detail = exception.rootCause?.message ?: "Conflict"
         }
     }
+
+    override fun getThrowableType(): Class<DataIntegrityViolationException> {
+        return DataIntegrityViolationException::class.java
+    }
 }
 
 @Component
-class HandlerMethodValidationProblemDetailFactory() : ProblemDetailFactory<Exception> {
+class HandlerMethodValidationProblemDetailFactory() : ProblemDetailFactory<HandlerMethodValidationException> {
 
-    override fun create(exception: Exception): ProblemDetail {
-        exception as HandlerMethodValidationException
+    override fun create(exception: HandlerMethodValidationException): ProblemDetail {
         val violations = exception.valueResults.flatMap { valueResult ->
             valueResult.resolvableErrors.map { error ->
                 "${error.codes?.firstOrNull()} -> ${error.defaultMessage}"
@@ -73,8 +90,13 @@ class HandlerMethodValidationProblemDetailFactory() : ProblemDetailFactory<Excep
             setProperty("violations", violations)
         }
     }
+
+    override fun getThrowableType(): Class<HandlerMethodValidationException> {
+        return HandlerMethodValidationException::class.java
+    }
 }
 
+@Component
 class ResourceNotFoundProblemDetailFactory() : ProblemDetailFactory<ResourceNotFoundException> {
 
     override fun create(exception: ResourceNotFoundException): ProblemDetail {
@@ -83,6 +105,26 @@ class ResourceNotFoundProblemDetailFactory() : ProblemDetailFactory<ResourceNotF
             type = URI.create("https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404")
             detail = exception.message
         }
+    }
+
+    override fun getThrowableType(): Class<ResourceNotFoundException> {
+        return ResourceNotFoundException::class.java
+    }
+}
+
+@Component
+class IllegalStateProblemDetailFactory() : ProblemDetailFactory<IllegalStateException> {
+
+    override fun create(exception: IllegalStateException): ProblemDetail {
+        return ProblemDetail.forStatus(HttpStatus.UNPROCESSABLE_ENTITY).apply {
+            title = "Unprocessable Entity"
+            type = URI.create("https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/422")
+            detail = exception.message
+        }
+    }
+
+    override fun getThrowableType(): Class<IllegalStateException> {
+        return IllegalStateException::class.java
     }
 }
 
@@ -96,8 +138,13 @@ class NoResourceFoundProblemDetailFactory() : ProblemDetailFactory<NoResourceFou
             detail = exception.message
         }
     }
+
+    override fun getThrowableType(): Class<NoResourceFoundException> {
+        return NoResourceFoundException::class.java
+    }
 }
 
+@Component
 class ConstraintViolationProblemDetailFactory() : ProblemDetailFactory<ConstraintViolationException> {
     private val logger = org.slf4j.LoggerFactory.getLogger(ConstraintViolationProblemDetailFactory::class.java)
 
@@ -109,6 +156,10 @@ class ConstraintViolationProblemDetailFactory() : ProblemDetailFactory<Constrain
             type = URI.create("https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/409")
             detail = exception.cause?.message ?: exception.message
         }
+    }
+
+    override fun getThrowableType(): Class<ConstraintViolationException> {
+        return ConstraintViolationException::class.java
     }
 }
 
@@ -125,22 +176,29 @@ class ThrowableProblemDetailFactory() : ProblemDetailFactory<Throwable> {
             detail = exception.cause?.message ?: exception.message
         }
     }
+
+    override fun getThrowableType(): Class<Throwable> {
+        return Throwable::class.java
+    }
+}
+
+@Configuration
+class ProblemDetailFactoryConfig {
+
+    @Bean
+    fun problemDetailFactoryMap(factories: List<ProblemDetailFactory<out Throwable>>): Map<Class<out Throwable>, ProblemDetailFactory<out Throwable>> {
+        return factories.associateBy { it.getThrowableType() }
+    }
 }
 
 @Component
-class ProblemDetailSelectorFactory {
-
+class ProblemDetailSelectorFactory(
+    @Autowired
+    private val mapByException: Map<Class<out Throwable>, ProblemDetailFactory<out Throwable>>
+) {
     fun createProblemDetailBasedOn(exception: Throwable): ProblemDetail {
-        return when (exception) {
-            is MethodArgumentNotValidException -> MethodArgumentNotValidProblemDetailFactory().create(exception)
-            is CpfAlreadyExists -> CpfAlreadyExistsProblemDetailFactory().create(exception)
-            is ResourceNotFoundException -> ResourceNotFoundProblemDetailFactory().create(exception)
-            is NoResourceFoundException -> NoResourceFoundProblemDetailFactory().create(exception)
-            is ConstraintViolationException -> ConstraintViolationProblemDetailFactory().create(exception)
-            is DataIntegrityViolationException -> DataIntegrityViolationProblemDetailFactory().create(exception)
-            is HandlerMethodValidationException -> HandlerMethodValidationProblemDetailFactory().create(exception)
-            else -> ThrowableProblemDetailFactory().create(exception)
-        }
+        val factory = mapByException[exception::class.java] as? ProblemDetailFactory<Throwable>
+        return factory?.create(exception) ?: ThrowableProblemDetailFactory().create(exception)
     }
 }
 

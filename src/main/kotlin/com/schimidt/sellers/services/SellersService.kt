@@ -1,6 +1,7 @@
 package com.schimidt.sellers.services
 
 import com.schimidt.sellers.domain.entities.Seller
+import com.schimidt.sellers.domain.entities.SellerUpdatable
 import com.schimidt.sellers.domain.exceptions.CpfAlreadyExists
 import com.schimidt.sellers.domain.exceptions.ResourceNotFoundException
 import com.schimidt.sellers.domain.repositories.SellerRepository
@@ -12,8 +13,8 @@ class SellersService(
     private val repository: SellerRepository
 ) {
     fun saveIfNotExists(seller: Seller): Result<Seller> {
-        repository.findByCpf(seller.cpf)?.let {
-            return Result.failure(CpfAlreadyExists(seller.cpf))
+        repository.findByCpf(seller.cpf())?.let {
+            return Result.failure(CpfAlreadyExists(seller.cpf()))
         }
 
         return try {
@@ -28,19 +29,19 @@ class SellersService(
         return repository.save<Seller>(seller)
     }
 
-    fun updateIfExists(sellerRequested: Seller): Result<Seller> {
+    @Transactional
+    fun updateIfExists(id: Long, sellerUpdatable: SellerUpdatable): Result<Seller> {
         return try {
-            repository.findById(sellerRequested.id!!)
+            repository.findById(id)
                 .map { sellerRetrieved ->
-                    sellerRetrieved.createNewSellerUpdatedUsing(sellerRequested)
-                        .let {
-                            Result.success(saveSeller(it))
-                        }
+                    sellerRetrieved.updateSellerUsing(sellerUpdatable)
+                    repository.save<Seller>(sellerRetrieved)
+                    Result.success(sellerRetrieved)
                 }
-                .orElseThrow { ResourceNotFoundException(sellerRequested.id!!) }
+                .orElseGet { Result.failure<Seller>(ResourceNotFoundException(id)) }
 
         } catch (e: Exception) {
-            Result.failure(e.cause ?: e)
+            Result.failure(e.cause?.cause ?: e)
         }
     }
 

@@ -46,21 +46,21 @@ class SellerController(
     }
 
     @PutMapping("/{id}", consumes = [APPLICATION_JSON_VALUE])
-    override fun updateSeller(@Positive id: Long, @Validated @RequestBody sellerRequest: UpdateSellerRequest): Any {
-        return service.updateIfExists(sellerRequest.toEntity(id))
+    override fun updateSeller(@Positive @PathVariable id: Long, @Validated @RequestBody sellerUpdatable: UpdateSellerRequest): Any {
+        return service.updateIfExists(id, sellerUpdatable)
             .onSuccess { return ResponseEntity.ok(SellerResponse.from(it)) }
             .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
     }
 
     @GetMapping("/{id}")
-    override fun getSellerBy(@Positive @PathVariable("id") id: Long): Any {
+    override fun getSellerBy(@Positive @PathVariable id: Long): Any {
         return service.findById(id)
             .onSuccess { return ResponseEntity.ok(SellerResponse.from(it)) }
             .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
     }
 
     @DeleteMapping("/{id}")
-    override fun deleteSeller(@Positive @PathVariable("id") id: Long): Any {
+    override fun deleteSeller(@Positive @PathVariable id: Long): Any {
         return service.deleteBy(id)
             .onSuccess { return ResponseEntity.noContent().build<SellerResponse>() }
             .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }

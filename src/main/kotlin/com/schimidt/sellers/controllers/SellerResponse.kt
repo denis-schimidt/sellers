@@ -6,7 +6,9 @@ import com.schimidt.sellers.domain.entities.Seller
 import java.time.LocalDate
 
 data class SellerResponse(
+    @JsonProperty("personal_data")
     val personalResponse: SellerPersonalResponse,
+    @JsonProperty("professional_data")
     val professionalResponse: SellerProfissionalResponse
 ) {
     companion object {
@@ -26,7 +28,7 @@ data class SellerProfissionalResponse(
     companion object {
         fun from(seller: Seller): SellerProfissionalResponse {
             return SellerProfissionalResponse(
-                cnpj = seller.cnpj,
+                cnpj = seller.cnpj(),
                 status = seller.status().name
             )
         }
@@ -45,11 +47,11 @@ data class SellerPersonalResponse(
         fun from(seller: Seller): SellerPersonalResponse {
             return SellerPersonalResponse(
                 id = seller.id!!,
-                name = seller.name,
-                email = seller.email,
-                cpf = seller.cpf,
-                birthday = seller.birthday,
-                phones = seller.phones.map { PhoneResponse.from(it) }
+                name = seller.name(),
+                email = seller.email(),
+                cpf = seller.cpf(),
+                birthday = seller.birthday(),
+                phones = seller.phones().map { PhoneResponse.from(it) }
             )
         }
     }
