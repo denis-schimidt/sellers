@@ -6,6 +6,8 @@ import com.schimidt.sellers.domain.exceptions.CpfAlreadyExists
 import com.schimidt.sellers.domain.exceptions.ResourceNotFoundException
 import com.schimidt.sellers.domain.repositories.SellerRepository
 import jakarta.transaction.Transactional
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 
 @Service
@@ -61,6 +63,15 @@ class SellersService(
         return try {
             repository.deleteById(lng)
             Result.success(Unit)
+
+        } catch (e: Exception) {
+            Result.failure(e.cause ?: e)
+        }
+    }
+
+    fun findAll(pageable: Pageable): Result<Page<Seller>> {
+        return try {
+            Result.success(repository.findAll(pageable))
 
         } catch (e: Exception) {
             Result.failure(e.cause ?: e)

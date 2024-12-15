@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.method.annotation.HandlerMethodValidationException
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import java.net.URI
 
@@ -16,6 +17,7 @@ class ExceptionHandler(
     private val noResourceFoundFactory: NoResourceFoundProblemDetailFactory,
     private val throwableFactory: ThrowableProblemDetailFactory,
     private val handlerMethodValidationExceptionFactory: HandlerMethodValidationProblemDetailFactory,
+    private val methodArgumentTypeMismatchExceptionProblemDetailFactory: MethodArgumentTypeMismatchExceptionProblemDetailFactory
 ) {
 
     @ExceptionHandler(HandlerMethodValidationException::class)
@@ -28,6 +30,12 @@ class ExceptionHandler(
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handle(exception: MethodArgumentNotValidException): ProblemDetail {
         return methodArgumentNotValidFactory.create(exception)
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handle(exception: MethodArgumentTypeMismatchException): ProblemDetail {
+        return methodArgumentTypeMismatchExceptionProblemDetailFactory.create(exception)
     }
 
     @ExceptionHandler(NoResourceFoundException::class)

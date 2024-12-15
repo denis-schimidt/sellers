@@ -12,13 +12,14 @@ import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Past
 import jakarta.validation.constraints.Size
 import org.hibernate.validator.constraints.br.CNPJ
 import org.hibernate.validator.constraints.br.CPF
 import java.time.LocalDate
+
+interface ValidateAll
 
 data class NewSellerRequest(
     @field:JsonProperty
@@ -30,36 +31,50 @@ data class NewSellerRequest(
     val professionalData: NewProfessionalRequest,
 ) {
     fun toEntity(): Seller {
-        return toEntity(personalData = personalData, cnpj = professionalData.cnpj)
+        val seller = Seller(
+            name = personalData.name!!,
+            email = personalData.email!!,
+            cpf = personalData.cpf!!,
+            cnpj = professionalData.cnpj,
+            birthday = personalData.birthday!!,
+            phones = mutableSetOf(),
+            status = SellerStatus.IN_ANALYSIS
+        )
+
+        personalData.phones?.forEach { phoneRequest ->
+            seller.addPhone(phoneRequest.toEntity(seller))
+        }
+
+        return seller
     }
 }
 
 data class UpdateSellerRequest(
     @field:JsonProperty
     @field:Valid
-    val personalData: SellerPersonalRequest,
+    val personalData: SellerPersonalRequest?,
 
     @field:JsonProperty
     @field:Valid
-    val professionalData: UpdateProfessionalRequest
+    val professionalData: UpdateProfessionalRequest?
 ) : SellerUpdatable {
 
-    override fun name(): String? = personalData.name
+    override fun name(): String? = personalData?.name
 
-    override fun email(): String? = personalData.email
+    override fun email(): String? = personalData?.email
 
-    override fun cpf(): String? = personalData.cpf
+    override fun cpf(): String? = personalData?.cpf
 
-    override fun birthday(): LocalDate? = personalData.birthday
+    override fun birthday(): LocalDate? = personalData?.birthday
 
-    override fun status(): SellerStatus? = professionalData.status
+    override fun status(): SellerStatus? = professionalData?.status
 
-    override fun cnpj(): String? = professionalData.cnpj
+    override fun cnpj(): String? = professionalData?.cnpj
 
     override fun phones(): Set<Phone>? {
-        return personalData.phones
-            .map { Phone(type = it.type, id = PhoneId(areaCode = it.areaCode.toByte(), number = it.number)) }
-            .toSet()
+        return personalData?.phones
+            ?.map { Phone(type = it.type, id = PhoneId(areaCode = it.areaCode.toByte(), number = it.number)) }
+            ?.toSet() ?: emptySet()
     }
 
     override fun hasDifferentStatus(otherStatus: SellerStatus): Boolean {
@@ -67,30 +82,12 @@ data class UpdateSellerRequest(
     }
 }
 
-
-private fun toEntity(id: Long? = null, personalData: SellerPersonalRequest, cnpj: String? = null, status: SellerStatus = SellerStatus.IN_ANALYSIS): Seller {
-    val seller = Seller(
-        id = id,
-        name = personalData.name,
-        email = personalData.email,
-        cpf = personalData.cpf,
-        cnpj = cnpj,
-        birthday = personalData.birthday,
-        phones = mutableSetOf(),
-        status = status
-    )
-    personalData.phones.forEach { phoneRequest ->
-        seller.addPhone(phoneRequest.toEntity(seller))
-    }
-    return seller
-}
-
 data class UpdateProfessionalRequest(
     @field:CNPJ
     @field:Size(max = 20)
     val cnpj: String? = null,
 
-    @field:NotNull
+    @field:NotNull(groups = [ValidateAll::class])
     val status: SellerStatus = SellerStatus.IN_ANALYSIS
 )
 
@@ -101,43 +98,39 @@ data class NewProfessionalRequest(
 )
 
 data class SellerPersonalRequest(
-    @field:NotBlank
+    @field:NotBlank(groups = [ValidateAll::class])
     @field:Size(max = 100)
-    val name: String,
+    val name: String?,
 
-    @field:NotBlank
+    @field:NotBlank(groups = [ValidateAll::class])
     @field:Size(max = 100)
     @field:Email
-    val email: String,
+    val email: String?,
 
-    @field:NotBlank
+    @field:NotBlank(groups = [ValidateAll::class])
     @field:Size(max = 15)
     @field:CPF
-    val cpf: String,
+    val cpf: String?,
 
-    @field:NotNull
+    @field:NotNull(groups = [ValidateAll::class])
     @field:Past
-    val birthday: LocalDate,
+    val birthday: LocalDate?,
 
-    @field:NotEmpty
-    @field:Size(min = 1, max = 2)
+    @field:Size(min = 1, max = 2, groups = [ValidateAll::class])
     @field:Valid
-    val phones: List<PhoneRequest>
+    val phones: List<PhoneRequest>?
 )
 
 data class PhoneRequest(
-    @field:NotNull
     @field:Min(10)
     @field:Max(99)
     @field:JsonProperty("area_code")
     val areaCode: Int,
 
-    @field:NotNull
     @field:Min(1999_9999)
     @field:Max(9999_99999)
     val number: Int,
 
-    @field:NotNull
     @field:JsonProperty("phone_type")
     val type: PhoneType
 ) {

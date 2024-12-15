@@ -12,6 +12,7 @@ import org.springframework.http.ProblemDetail
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.method.annotation.HandlerMethodValidationException
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import java.net.URI
 
@@ -109,6 +110,22 @@ class ResourceNotFoundProblemDetailFactory() : ProblemDetailFactory<ResourceNotF
 
     override fun getThrowableType(): Class<ResourceNotFoundException> {
         return ResourceNotFoundException::class.java
+    }
+}
+
+@Component
+class MethodArgumentTypeMismatchExceptionProblemDetailFactory() : ProblemDetailFactory<MethodArgumentTypeMismatchException> {
+
+    override fun create(exception: MethodArgumentTypeMismatchException): ProblemDetail {
+        return ProblemDetail.forStatus(HttpStatus.BAD_REQUEST).apply {
+            title = "Invalid Parameter"
+            type = URI.create("https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400")
+            detail = exception.cause?.message ?: exception.message
+        }
+    }
+
+    override fun getThrowableType(): Class<MethodArgumentTypeMismatchException> {
+        return MethodArgumentTypeMismatchException::class.java
     }
 }
 
