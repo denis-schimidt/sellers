@@ -20,7 +20,6 @@ class JacksonConfig {
             configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
             registerModule(JavaTimeModule())
             disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-            serializationConfig.without(SerializationFeature.WRITE_ENUMS_USING_TO_STRING)
         }.registerKotlinModule()
     }
 }

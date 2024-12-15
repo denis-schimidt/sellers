@@ -84,7 +84,7 @@ class SellerController(
         @RequestParam(value = "orderBy") orderBy: OrderingFieldRequest,
         @RequestParam(value = "direction") direction: OrderingDirectionRequest
     ): Any {
-        val pageRequest = PageRequest.of(page, size, direction.searchParameter, orderBy.fieldName)
+        val pageRequest = PageRequest.of(page, size, direction.searchParameter, orderBy.name.lowercase())
         return service.findAll(pageRequest)
             .onSuccess {
                 val pageOfSellers = it.map { seller -> SellerResponse.from(seller) }
@@ -213,6 +213,11 @@ private interface EndpointDocumented {
             content = [Content(schema = Schema(implementation = SellerResponse::class))]
         ),
         ApiResponse(
+            responseCode = "400",
+            description = "Bad Request",
+            content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]
+        ),
+        ApiResponse(
             responseCode = "500",
             description = "Internal Server Error",
             content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]
@@ -221,7 +226,7 @@ private interface EndpointDocumented {
     fun getAllSellers(
         @RequestParam(value = "page", defaultValue = "0") page: Int,
         @RequestParam(value = "size", defaultValue = "5") size: Int,
-        @RequestParam(value = "orderBy") @Schema(allowableValues = ["id", "email", "cpf"]) orderBy: OrderingFieldRequest,
+        @RequestParam(value = "orderBy") @Schema(allowableValues = ["id", "email", "cpf", "cnpj"]) orderBy: OrderingFieldRequest,
         @RequestParam(value = "direction") @Schema(allowableValues = ["asc", "desc"]) direction: OrderingDirectionRequest
     ): Any
 
