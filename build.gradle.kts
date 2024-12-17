@@ -40,7 +40,6 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict")
     }
-    jvmToolchain(22)
 }
 
 allOpen {
