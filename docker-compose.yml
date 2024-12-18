@@ -6,9 +6,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    logging:
-      options:
-        max-size: 10m
     container_name: sellers-api
     ports:
       - "8080:8080"

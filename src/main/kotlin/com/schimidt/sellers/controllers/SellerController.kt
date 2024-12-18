@@ -1,8 +1,8 @@
 package com.schimidt.sellers.controllers
 
-import com.schimidt.sellers.controllers.exceptions.ExceptionHandler.ProblemDetailCustom
-import com.schimidt.sellers.controllers.exceptions.ExceptionHandler.ProblemDetailWithViolationsCustom
-import com.schimidt.sellers.controllers.exceptions.ProblemDetailSelectorFactory
+import com.schimidt.sellers.controllers.handlers.ExceptionHandler.ProblemDetailCustom
+import com.schimidt.sellers.controllers.handlers.ExceptionHandler.ProblemDetailWithViolationsCustom
+import com.schimidt.sellers.controllers.handlers.ProblemDetailSelectorFactory
 import com.schimidt.sellers.controllers.helpers.OrderingDirectionRequest
 import com.schimidt.sellers.controllers.helpers.OrderingFieldRequest
 import com.schimidt.sellers.controllers.helpers.PageResponse

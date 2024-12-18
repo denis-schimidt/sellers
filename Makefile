@@ -18,7 +18,7 @@ build:
 	@echo "Construindo imagem Docker..."
 	@docker build -t $(DOCKER_IMAGE) .
 
-run: build
+run: clean build
 	@echo "Iniciando os contêineres com Docker Compose..."
 	@APP_VERSION=$(DOCKER_IMAGE) docker-compose -f $(DOCKER_COMPOSE_FILE) up -d
 

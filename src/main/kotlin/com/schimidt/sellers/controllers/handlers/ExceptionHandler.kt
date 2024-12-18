@@ -1,5 +1,6 @@
-package com.schimidt.sellers.controllers.exceptions
+package com.schimidt.sellers.controllers.handlers
 
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.web.bind.MethodArgumentNotValidException
@@ -19,6 +20,7 @@ class ExceptionHandler(
     private val handlerMethodValidationExceptionFactory: HandlerMethodValidationProblemDetailFactory,
     private val methodArgumentTypeMismatchExceptionProblemDetailFactory: MethodArgumentTypeMismatchExceptionProblemDetailFactory
 ) {
+    private val log = LoggerFactory.getLogger(ExceptionHandler::class.java)
 
     @ExceptionHandler(HandlerMethodValidationException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -47,6 +49,7 @@ class ExceptionHandler(
     @ExceptionHandler(Throwable::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     fun handle(exception: Throwable): ProblemDetail {
+        log.error("An unexpected error occurred -> ", exception)
         return throwableFactory.create(exception)
     }
 

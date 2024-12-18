@@ -1,4 +1,4 @@
-package com.schimidt.sellers.controllers.exceptions
+package com.schimidt.sellers.controllers.handlers
 
 import com.schimidt.sellers.domain.exceptions.CpfAlreadyExists
 import com.schimidt.sellers.domain.exceptions.ResourceNotFoundException
