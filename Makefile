@@ -5,7 +5,7 @@ DOCKER_COMPOSE_FILE := docker-compose.yml
 DOCKER_IMAGE := $(PROJECT_NAME):$(VERSION)
 JAVA_FLAGS := --enable-preview -Xms1024m -Xmx1024m
 
-.PHONY: test build run ps logs restart stop clear
+.PHONY: test build run ps logs restart stop clean
 
 version:
 	@echo $(VERSION)
@@ -39,3 +39,4 @@ stop:
 clean:
 	@echo "Parando e removendo os contêineres..."
 	@docker-compose -f $(DOCKER_COMPOSE_FILE) down
+	@if [ -n "$$(docker ps -a -q)" ]; then docker ps -a -q | xargs docker rm || true; fi

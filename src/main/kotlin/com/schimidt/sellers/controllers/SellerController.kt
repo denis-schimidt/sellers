@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.Positive
 import org.springframework.data.domain.PageRequest
+import org.springframework.http.CacheControl
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder
+import java.util.concurrent.TimeUnit
 
 @RestController
 @RequestMapping("/api/v1/sellers", produces = [APPLICATION_JSON_VALUE])
@@ -73,7 +75,11 @@ class SellerController(
     @GetMapping("/{id}")
     override fun getSellerBy(@Positive @PathVariable id: Long): Any {
         return service.findById(id)
-            .onSuccess { return ResponseEntity.ok(SellerResponse.from(it)) }
+            .onSuccess {
+                return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(3600, TimeUnit.SECONDS))
+                    .body(SellerResponse.from(it))
+            }
             .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
     }
 
