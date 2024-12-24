@@ -2,7 +2,7 @@
 PROJECT_NAME := sellers-api
 VERSION := $(shell grep -oP 'version = "\K[0-9.]+(?=-SNAPSHOT")' build.gradle.kts)
 DOCKER_COMPOSE_FILE := docker-compose.yml
-DOCKER_IMAGE := $(PROJECT_NAME):$(VERSION)
+DOCKER_IMAGE := schimidt/$(PROJECT_NAME):$(VERSION)
 JAVA_FLAGS := --enable-preview -Xms1024m -Xmx1024m
 
 .PHONY: test build run ps logs restart stop clean

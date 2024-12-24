@@ -77,7 +77,11 @@ class SellerController(
         return service.findById(id)
             .onSuccess {
                 return ResponseEntity.ok()
-                    .cacheControl(CacheControl.maxAge(3600, TimeUnit.SECONDS))
+                    .cacheControl(
+                        CacheControl.maxAge(10, TimeUnit.MINUTES)
+                            .noTransform()
+                            .cachePrivate()
+                    )
                     .body(SellerResponse.from(it))
             }
             .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
@@ -87,8 +91,8 @@ class SellerController(
     override fun getAllSellers(
         @RequestParam(value = "page", defaultValue = "0") page: Int,
         @RequestParam(value = "size", defaultValue = "5") size: Int,
-        @RequestParam(value = "orderBy") orderBy: OrderingFieldRequest,
-        @RequestParam(value = "direction") direction: OrderingDirectionRequest
+        @RequestParam(value = "orderBy", defaultValue = "ID") orderBy: OrderingFieldRequest,
+        @RequestParam(value = "direction", defaultValue = "DESC") direction: OrderingDirectionRequest
     ): Any {
         val pageRequest = PageRequest.of(page, size, direction.searchParameter, orderBy.name.lowercase())
         return service.findAll(pageRequest)

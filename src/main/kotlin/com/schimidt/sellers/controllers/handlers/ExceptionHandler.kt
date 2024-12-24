@@ -49,7 +49,7 @@ class ExceptionHandler(
     @ExceptionHandler(Throwable::class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     fun handle(exception: Throwable): ProblemDetail {
-        log.error("An unexpected error occurred -> ", exception)
+        log.error("An unexpected error occurred -> ", exception.cause ?: exception)
         return throwableFactory.create(exception)
     }
 
