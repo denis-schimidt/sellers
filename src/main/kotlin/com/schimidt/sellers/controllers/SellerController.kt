@@ -96,18 +96,14 @@ class SellerController(
     ): Any {
         val pageRequest = PageRequest.of(page, size, direction.searchParameter, orderBy.name.lowercase())
         return service.findAll(pageRequest)
-            .onSuccess {
-                val pageOfSellers = it.map { seller -> SellerResponse.from(seller) }
-                return ResponseEntity.ok(PageResponse.from(pageOfSellers))
-            }
-            .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
+            .map(SellerResponse::from)
+            .let { ResponseEntity.ok(PageResponse.from(it)) }
     }
 
     @DeleteMapping("/{id}")
     override fun deleteSeller(@Positive @PathVariable id: Long): Any {
         return service.deleteBy(id)
-            .onSuccess { return ResponseEntity.noContent().build<SellerResponse>() }
-            .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
+            .let { ResponseEntity.noContent().build<SellerResponse>() }
     }
 }
 

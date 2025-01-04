@@ -2,10 +2,10 @@ package com.schimidt.sellers.services
 
 import com.schimidt.sellers.domain.entities.Seller
 import com.schimidt.sellers.domain.entities.SellerUpdatable
-import com.schimidt.sellers.domain.exceptions.CpfAlreadyExists
 import com.schimidt.sellers.domain.exceptions.ResourceNotFoundException
 import com.schimidt.sellers.domain.repositories.SellerRepository
 import jakarta.transaction.Transactional
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
@@ -15,13 +15,10 @@ class SellersService(
     private val repository: SellerRepository
 ) {
     fun saveIfNotExists(seller: Seller): Result<Seller> {
-        repository.findByCpf(seller.cpf())?.let {
-            return Result.failure(CpfAlreadyExists(seller.cpf()))
-        }
-
         return try {
             Result.success(saveSeller(seller))
-        } catch (e: Exception) {
+
+        } catch (e: DataIntegrityViolationException) {
             Result.failure(e.cause ?: e)
         }
     }
@@ -42,39 +39,22 @@ class SellersService(
                 }
                 .orElseGet { Result.failure<Seller>(ResourceNotFoundException(id)) }
 
-        } catch (e: Exception) {
-            Result.failure(e.cause?.cause ?: e)
+        } catch (e: DataIntegrityViolationException) {
+            Result.failure(e.cause ?: e)
         }
     }
 
     fun findById(id: Long): Result<Seller> {
-
-        return try {
-            repository.findByIdWithPhones(id)?.let { Result.success(it) }
-                ?: Result.failure(ResourceNotFoundException(id))
-
-        } catch (e: Exception) {
-            Result.failure(e.cause ?: e)
-        }
+        return repository.findByIdWithPhones(id)
+            ?.let { Result.success(it) }
+            ?: Result.failure(ResourceNotFoundException(id))
     }
 
-    fun deleteBy(lng: Long): Result<Unit> {
-
-        return try {
-            repository.deleteById(lng)
-            Result.success(Unit)
-
-        } catch (e: Exception) {
-            Result.failure(e.cause ?: e)
-        }
+    fun deleteBy(id: Long) {
+        repository.deleteById(id)
     }
 
-    fun findAll(pageable: Pageable): Result<Page<Seller>> {
-        return try {
-            Result.success(repository.findAll(pageable))
-
-        } catch (e: Exception) {
-            Result.failure(e.cause ?: e)
-        }
+    fun findAll(pageable: Pageable): Page<Seller> {
+        return repository.findAll(pageable)
     }
 }

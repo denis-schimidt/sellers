@@ -22,6 +22,10 @@ run: clean build
 	@echo "Iniciando os contêineres com Docker Compose..."
 	@APP_VERSION=$(DOCKER_IMAGE) docker-compose -f $(DOCKER_COMPOSE_FILE) up -d
 
+run-db:
+	@echo "Iniciando o contêiner do banco de dados..."
+	@docker-compose -f $(DOCKER_COMPOSE_FILE) up -d postgres-db
+
 ps:
 	@docker ps
 

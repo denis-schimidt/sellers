@@ -40,6 +40,22 @@ class MethodArgumentNotValidProblemDetailFactory() : ProblemDetailFactory<Method
 }
 
 @Component
+class IllegalArgumentExceptionProblemDetailFactory() : ProblemDetailFactory<IllegalArgumentException> {
+    override fun create(exception: IllegalArgumentException): ProblemDetail {
+        return ProblemDetail.forStatus(HttpStatus.BAD_REQUEST).apply {
+            title = "Invalid Request"
+            type = URI.create("https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400")
+            detail = exception.message
+        }
+    }
+
+    override fun getThrowableType(): Class<IllegalArgumentException> {
+        return IllegalArgumentException::class.java
+    }
+}
+
+
+@Component
 class CpfAlreadyExistsProblemDetailFactory() : ProblemDetailFactory<CpfAlreadyExists> {
 
     override fun create(exception: CpfAlreadyExists): ProblemDetail {

@@ -18,7 +18,8 @@ class ExceptionHandler(
     private val noResourceFoundFactory: NoResourceFoundProblemDetailFactory,
     private val throwableFactory: ThrowableProblemDetailFactory,
     private val handlerMethodValidationExceptionFactory: HandlerMethodValidationProblemDetailFactory,
-    private val methodArgumentTypeMismatchExceptionProblemDetailFactory: MethodArgumentTypeMismatchExceptionProblemDetailFactory
+    private val methodArgumentTypeMismatchExceptionProblemDetailFactory: MethodArgumentTypeMismatchExceptionProblemDetailFactory,
+    private val illegalArgumentExceptionProblemDetailFactory: IllegalArgumentExceptionProblemDetailFactory
 ) {
     private val log = LoggerFactory.getLogger(ExceptionHandler::class.java)
 
@@ -44,6 +45,12 @@ class ExceptionHandler(
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handle(exception: NoResourceFoundException): ProblemDetail {
         return noResourceFoundFactory.create(exception)
+    }
+
+    @ExceptionHandler(IllegalArgumentException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handle(exception: IllegalArgumentException): ProblemDetail {
+        return illegalArgumentExceptionProblemDetailFactory.create(exception)
     }
 
     @ExceptionHandler(Throwable::class)
