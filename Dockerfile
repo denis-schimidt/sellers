@@ -3,7 +3,7 @@ FROM gradle:8.11-jdk-21-and-23-alpine AS build
 WORKDIR /app
 COPY build.gradle.kts settings.gradle.kts gradle.properties ./
 COPY src ./src
-RUN gradle clean build --build-cache --parallel --no-daemon
+RUN gradle clean build --build-cache --configuration-cache --parallel
 RUN rm build/libs/*plain.jar && mv build/libs/*.jar sellers-api.jar
 
 #Etapa 2: Gerar JRE customizado

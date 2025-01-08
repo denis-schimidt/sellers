@@ -8,11 +8,13 @@ import com.schimidt.sellers.controllers.helpers.OrderingFieldRequest
 import com.schimidt.sellers.controllers.helpers.PageResponse
 import com.schimidt.sellers.services.SellersService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.headers.Header
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Positive
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.CacheControl
@@ -90,7 +92,7 @@ class SellerController(
     @GetMapping
     override fun getAllSellers(
         @RequestParam(value = "page", defaultValue = "0") page: Int,
-        @RequestParam(value = "size", defaultValue = "5") size: Int,
+        @RequestParam(value = "size", defaultValue = "5") @Max(10) size: Int,
         @RequestParam(value = "orderBy", defaultValue = "ID") orderBy: OrderingFieldRequest,
         @RequestParam(value = "direction", defaultValue = "DESC") direction: OrderingDirectionRequest
     ): Any {
@@ -115,6 +117,10 @@ private interface EndpointDocumented {
     )
     @ApiResponses(
         ApiResponse(
+            headers = [Header(
+                name = "Location",
+                description = "The URI of the created seller"
+            )],
             responseCode = "201",
             description = "Seller created",
             content = [Content(schema = Schema(implementation = SellerResponse::class))]
@@ -192,6 +198,10 @@ private interface EndpointDocumented {
     )
     @ApiResponses(
         ApiResponse(
+            headers = [Header(
+                name = "Cache-Control (max-age)",
+                description = "The maximum time in minutes that the response can be cached"
+            )],
             responseCode = "200",
             description = "Seller found",
             content = [Content(schema = Schema(implementation = SellerResponse::class))]
@@ -231,7 +241,7 @@ private interface EndpointDocumented {
     )
     fun getAllSellers(
         @RequestParam(value = "page", defaultValue = "0") page: Int,
-        @RequestParam(value = "size", defaultValue = "5") size: Int,
+        @RequestParam(value = "size", defaultValue = "5") @Max(10) size: Int,
         @RequestParam(value = "orderBy") @Schema(allowableValues = ["id", "email", "cpf", "cnpj"]) orderBy: OrderingFieldRequest,
         @RequestParam(value = "direction") @Schema(allowableValues = ["asc", "desc"]) direction: OrderingDirectionRequest
     ): Any

@@ -58,7 +58,7 @@ data class SellerPersonalResponse(
 }
 
 data class PhoneResponse(
-    @JsonProperty
+    @field:JsonProperty("area_code")
     val areaCode: Byte,
     val number: Int,
     @field:JsonProperty("phone_type")
