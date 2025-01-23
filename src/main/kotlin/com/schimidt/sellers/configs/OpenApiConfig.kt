@@ -14,7 +14,7 @@ class OpenApiConfig {
             info(
                 Info()
                     .title("Sellers API")
-                    .description("API to manage sellers example")
+                    .description("API to manage sellers")
                     .summary("API to manage sellers")
                     .version("1.0.0")
             )

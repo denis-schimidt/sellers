@@ -6,6 +6,7 @@ import com.schimidt.sellers.controllers.handlers.ProblemDetailSelectorFactory
 import com.schimidt.sellers.controllers.helpers.OrderingDirectionRequest
 import com.schimidt.sellers.controllers.helpers.OrderingFieldRequest
 import com.schimidt.sellers.controllers.helpers.PageResponse
+import com.schimidt.sellers.controllers.validations.DocumentsValid
 import com.schimidt.sellers.domain.entities.Seller
 import com.schimidt.sellers.services.SellersService
 import io.swagger.v3.oas.annotations.Operation
@@ -18,7 +19,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
+import jakarta.validation.constraints.Size
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.CacheControl
 import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
@@ -40,105 +43,11 @@ import java.util.concurrent.TimeUnit
 
 @RestController
 @RequestMapping("/api/v1", produces = [APPLICATION_JSON_VALUE])
+@Tag(name = "Sellers", description = "Operations related to sellers")
 class SellerController(
     private val service: SellersService,
     private val problemDetailSelectorFactory: ProblemDetailSelectorFactory
-) : EndpointDocumented {
-
-    @PostMapping("/sellers", consumes = [APPLICATION_JSON_VALUE])
-    override fun saveSeller(@Validated(value = [ValidateAll::class]) @RequestBody sellerRequest: NewSellerRequest): Any {
-        return service.saveIfNotExists(sellerRequest.toEntity())
-            .onSuccess {
-                return ResponseEntity.created(
-                    ServletUriComponentsBuilder.fromCurrentRequest()
-                        .path("/{id}")
-                        .buildAndExpand(it.id)
-                        .toUri()
-                ).body(SellerResponse.from(it))
-            }
-            .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
-    }
-
-    @PutMapping("/sellers/{id}", consumes = [APPLICATION_JSON_VALUE])
-    override fun updateSellerTotally(
-        @Positive @PathVariable id: Long,
-        @Validated(value = [ValidateAll::class]) @RequestBody sellerUpdatable: UpdateSellerRequest
-    ): Any {
-        return executeUpdateSeller(id, sellerUpdatable)
-    }
-
-    @PatchMapping("/sellers/{id}", consumes = [APPLICATION_JSON_VALUE])
-    override fun updateSellerPartially(@Positive @PathVariable id: Long, @Validated @RequestBody sellerUpdatable: UpdateSellerRequest): Any {
-        return executeUpdateSeller(id, sellerUpdatable)
-    }
-
-    private fun executeUpdateSeller(id: Long, sellerUpdatable: UpdateSellerRequest): Any {
-        return service.updateIfExists(id, sellerUpdatable)
-            .onSuccess { return ResponseEntity.ok(SellerResponse.from(it)) }
-            .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
-    }
-
-    @GetMapping("/sellers/{id}")
-    override fun getSellerBy(@Positive @PathVariable id: Long): Any {
-        return service.findById(id)
-            .onSuccess {
-                return ResponseEntity.ok()
-                    .cacheControl(
-                        CacheControl.maxAge(5, TimeUnit.MINUTES)
-                            .noTransform()
-                            .cachePrivate()
-                    )
-                    .body(SellerResponse.from(it))
-            }
-            .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
-    }
-
-    data class InputDocument(val cpf: String?, val cnpj: String?)
-
-    @GetMapping("/sellers;{documents}")
-    override fun getSellersBy(
-        @MatrixVariable documents: Map<String, List<String>>
-    ): Any {
-
-        println(documents)
-//        if (StringUtils.isNotBlank(cpf)) {
-//            return service.findByCpf(cpf!!)
-//                .onSuccess { return ResponseEntity.ok(SellerResponse.from(it)) }
-//                .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
-//        }
-//
-//        if (StringUtils.isNotBlank(cnpj)) {
-//            return service.findByCnpj(cnpj!!)
-//                .onSuccess { return ResponseEntity.ok(SellerResponse.from(it)) }
-//                .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
-//        }
-
-        return Result.failure<Seller?>(IllegalArgumentException("CPF or CNPJ must be provided"))
-    }
-
-    @GetMapping("/sellers")
-    override fun getAllSellers(
-        @RequestParam(value = "page", defaultValue = "0") page: Int,
-        @RequestParam(value = "size", defaultValue = "5") @Max(10) size: Int,
-        @RequestParam(value = "orderBy", defaultValue = "ID") orderBy: OrderingFieldRequest,
-        @RequestParam(value = "direction", defaultValue = "DESC") direction: OrderingDirectionRequest
-    ): Any {
-        val pageRequest = PageRequest.of(page, size, direction.searchParameter, orderBy.name.lowercase())
-        return service.findAll(pageRequest)
-            .map(SellerResponse::from)
-            .let { ResponseEntity.ok(PageResponse.from(it)) }
-    }
-
-    @DeleteMapping("/sellers/{id}")
-    override fun deleteSeller(@Positive @PathVariable id: Long): Any {
-        return service.deleteBy(id)
-            .let { ResponseEntity.noContent().build<SellerResponse>() }
-    }
-}
-
-@Tag(name = "Sellers", description = "Operations related to sellers")
-private interface EndpointDocumented {
-
+) {
     @Operation(
         summary = "Save a new seller", tags = ["Sellers"]
     )
@@ -168,7 +77,19 @@ private interface EndpointDocumented {
             content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]
         )
     )
-    fun saveSeller(sellerRequest: NewSellerRequest): Any
+    @PostMapping("/sellers", consumes = [APPLICATION_JSON_VALUE])
+    fun saveSeller(@Validated(value = [ValidateAll::class]) @RequestBody sellerRequest: NewSellerRequest): Any {
+        return service.saveIfNotExists(sellerRequest.toEntity())
+            .onSuccess {
+                return ResponseEntity.created(
+                    ServletUriComponentsBuilder.fromCurrentRequest()
+                        .path("/{id}")
+                        .buildAndExpand(it.id)
+                        .toUri()
+                ).body(SellerResponse.from(it))
+            }
+            .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
+    }
 
     @Operation(
         summary = "Update a seller totally", tags = ["Sellers"]
@@ -193,7 +114,13 @@ private interface EndpointDocumented {
             content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]
         )
     )
-    fun updateSellerTotally(@Positive @PathVariable id: Long, @Validated @RequestBody sellerUpdatable: UpdateSellerRequest): Any
+    @PutMapping("/sellers/{id}", consumes = [APPLICATION_JSON_VALUE])
+    fun updateSellerTotally(
+        @Positive @PathVariable id: Long,
+        @Validated(value = [ValidateAll::class]) @RequestBody sellerUpdatable: UpdateSellerRequest
+    ): Any {
+        return executeUpdateSeller(id, sellerUpdatable)
+    }
 
     @Operation(
         summary = "Update a seller partially", tags = ["Sellers"]
@@ -218,7 +145,16 @@ private interface EndpointDocumented {
             content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]
         )
     )
-    fun updateSellerPartially(@Positive @PathVariable id: Long, @Validated @RequestBody sellerUpdatable: UpdateSellerRequest): Any
+    @PatchMapping("/sellers/{id}", consumes = [APPLICATION_JSON_VALUE])
+    fun updateSellerPartially(@Positive @PathVariable id: Long, @Validated @RequestBody sellerUpdatable: UpdateSellerRequest): Any {
+        return executeUpdateSeller(id, sellerUpdatable)
+    }
+
+    private fun executeUpdateSeller(id: Long, sellerUpdatable: UpdateSellerRequest): Any {
+        return service.updateIfExists(id, sellerUpdatable)
+            .onSuccess { return ResponseEntity.ok(SellerResponse.from(it)) }
+            .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
+    }
 
     @Operation(
         summary = "Retrieve a seller by id", tags = ["Sellers"]
@@ -249,20 +185,31 @@ private interface EndpointDocumented {
             content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]
         )
     )
-    fun getSellerBy(@Positive @PathVariable("id") id: Long): Any
+    @GetMapping("/sellers/{id}")
+    fun getSellerBy(@Positive @PathVariable id: Long): Any {
+        return service.findById(id)
+            .onSuccess {
+                return ResponseEntity.ok()
+                    .cacheControl(
+                        CacheControl.maxAge(5, TimeUnit.MINUTES)
+                            .noTransform()
+                            .cachePrivate()
+                    )
+                    .body(SellerResponse.from(it))
+            }
+            .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
+    }
 
     @Operation(
         summary = "Retrieves one or more sellers using documents (matrix variable)",
-        description = "You can provide both CPFs and CNPJs at same time from different sellers (cpf=77135947010,55608789016;cnpj=49781729000131).  " +
+        description = "It is possible to provide CPFs and CNPJs from different sellers at the same time (cpf=77135947010,55608789016;cnpj=49781729000131). <br/>  " +
                 "If you prefer, you can chose only one type for query (cpf or cnpj).",
         tags = ["Sellers"],
-        hidden = false,
         parameters = [
             Parameter(
                 name = "documents",
                 required = true,
-                hidden = false,
-                example = "cpf=77135947010,55608789016;cnpj=49781729000131,12191314000106,03506261000176",
+                example = "cpf=77135947010;cnpj=49781729000131,12191314000106",
                 `in` = PATH,
             )
         ]
@@ -289,9 +236,28 @@ private interface EndpointDocumented {
             content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]
         )
     )
+    @GetMapping("/sellers;{documents}")
     fun getSellersBy(
+        @NotNull @Size(min = 1) @DocumentsValid
         @MatrixVariable documents: Map<String, List<String>>
-    ): Any
+    ): Any {
+
+
+        println(documents)
+//        if (StringUtils.isNotBlank(cpf)) {
+//            return service.findByCpf(cpf!!)
+//                .onSuccess { return ResponseEntity.ok(SellerResponse.from(it)) }
+//                .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
+//        }
+//
+//        if (StringUtils.isNotBlank(cnpj)) {
+//            return service.findByCnpj(cnpj!!)
+//                .onSuccess { return ResponseEntity.ok(SellerResponse.from(it)) }
+//                .onFailure { return problemDetailSelectorFactory.createProblemDetailBasedOn(it) }
+//        }
+
+        return Result.failure<Seller?>(IllegalArgumentException("CPF or CNPJ must be provided"))
+    }
 
     @Operation(
         summary = "List all sellers paginated", tags = ["Sellers"],
@@ -319,13 +285,18 @@ private interface EndpointDocumented {
             content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]
         )
     )
-    @GetMapping
+    @GetMapping("/sellers")
     fun getAllSellers(
         @RequestParam(value = "page", defaultValue = "0") page: Int,
         @RequestParam(value = "size", defaultValue = "5") @Max(10) size: Int,
-        @RequestParam(value = "orderBy") @Schema(allowableValues = ["id", "email", "cpf", "cnpj"]) orderBy: OrderingFieldRequest,
-        @RequestParam(value = "direction") @Schema(allowableValues = ["asc", "desc"]) direction: OrderingDirectionRequest
-    ): Any
+        @RequestParam(value = "orderBy", defaultValue = "ID") orderBy: OrderingFieldRequest,
+        @RequestParam(value = "direction", defaultValue = "DESC") direction: OrderingDirectionRequest
+    ): Any {
+        val pageRequest = PageRequest.of(page, size, direction.searchParameter, orderBy.name.lowercase())
+        return service.findAll(pageRequest)
+            .map(SellerResponse::from)
+            .let { ResponseEntity.ok(PageResponse.from(it)) }
+    }
 
     @Operation(
         summary = "Delete a seller by id", tags = ["Sellers"],
@@ -342,5 +313,9 @@ private interface EndpointDocumented {
             content = [Content(schema = Schema(implementation = ProblemDetailCustom::class))]
         )
     )
-    fun deleteSeller(@Positive @PathVariable id: Long): Any
+    @DeleteMapping("/sellers/{id}")
+    fun deleteSeller(@Positive @PathVariable id: Long): Any {
+        return service.deleteBy(id)
+            .let { ResponseEntity.noContent().build<SellerResponse>() }
+    }
 }
