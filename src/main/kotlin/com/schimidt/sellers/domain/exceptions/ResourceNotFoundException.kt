@@ -1,5 +1,6 @@
 package com.schimidt.sellers.domain.exceptions
 
-class ResourceNotFoundException(id: Long) : RuntimeException() {
-    override val message: String = "Seller ID -> $id not found"
+class ResourceNotFoundException : RuntimeException {
+    constructor(id: Long) : super("Seller ID -> $id not found")
+    constructor(cpf: String) : super("Seller CPF -> $cpf not found")
 }

@@ -44,8 +44,20 @@ class SellersService(
         }
     }
 
+    fun findByCpf(cpf: String): Result<Seller> {
+        return repository.findSellerByCpf(cpf = cpf)
+            ?.let { Result.success(it) }
+            ?: Result.failure(ResourceNotFoundException(cpf))
+    }
+
+    fun findByCnpj(cnpj: String): Result<Seller> {
+        return repository.findSellerByCnpj(cnpj = cnpj)
+            ?.let { Result.success(it) }
+            ?: Result.failure(ResourceNotFoundException(cnpj))
+    }
+
     fun findById(id: Long): Result<Seller> {
-        return repository.findByIdWithPhones(id)
+        return repository.findSellerById(id)
             ?.let { Result.success(it) }
             ?: Result.failure(ResourceNotFoundException(id))
     }

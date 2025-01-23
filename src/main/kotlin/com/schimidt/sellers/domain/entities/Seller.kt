@@ -8,6 +8,8 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType.IDENTITY
 import jakarta.persistence.Id
+import jakarta.persistence.NamedAttributeNode
+import jakarta.persistence.NamedEntityGraph
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import jakarta.validation.Valid
@@ -19,6 +21,7 @@ import org.hibernate.validator.constraints.br.CNPJ
 import org.hibernate.validator.constraints.br.CPF
 import java.time.LocalDate
 
+@NamedEntityGraph(name = "Seller.phones", attributeNodes = [NamedAttributeNode("phones")])
 @Table(name = "sellers")
 @Entity
 class Seller(
